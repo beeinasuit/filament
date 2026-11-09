@@ -32,5 +32,10 @@ When you change any file, bump `VERSION` in `sw.js` (e.g. `filament-v2`) and red
 
 The home-screen app has its own storage, separate from Safari tabs. Seed data loads on first launch there.
 
+## Logging a print
+Tap **Log a print**, then take a photo of the slicer's estimate or pick a screenshot. The app reads the grams on the phone itself, with no server or account. The first time, it downloads a ~4 MB text reader. It's built for the Bambu Studio / OrcaSlicer filament table, where it uses each filament's **Total** column, and it also understands PrusaSlicer and Cura totals. Check the numbers it read against the photo, fix any misreads, pick the spool for each filament, and tap **Apply**. Every print is saved under History (the clock icon), and you can undo it there.
+
+Screenshots read much more reliably than photos of a monitor.
+
 ## Backup
 Use Settings (⚙︎) → **Export JSON backup** to save the file to Files or AirDrop it. Restore it with **Import JSON backup**. Deleting the home-screen icon, or iOS clearing site data, erases the inventory, so export now and then.

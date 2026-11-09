@@ -19,20 +19,39 @@
 <header class="top">
   <div class="title-row">
     <h1>Filament</h1>
-    <button id="btn-settings" class="icon-btn" aria-label="Settings">⚙︎</button>
+    <div class="title-btns">
+      <button id="btn-history" class="icon-btn" aria-label="Print history">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+      </button>
+      <button id="btn-settings" class="icon-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
   </div>
   <div class="stats" id="stats"></div>
-  <input id="search" type="search" placeholder="Search brand, color, material, notes…" autocomplete="off">
-  <div class="filters">
-    <select id="f-material" aria-label="Material filter"></select>
-    <select id="f-brand" aria-label="Brand filter"></select>
-    <button id="f-low" class="chip" aria-pressed="false">Low stock</button>
+  <div class="search-row">
+    <input id="search" type="search" placeholder="Search brand, color, notes…" autocomplete="off">
+    <select id="sort" aria-label="Sort">
+      <option value="added">Sort: Added</option>
+      <option value="low">Least left</option>
+      <option value="high">Most left</option>
+      <option value="color">Color</option>
+      <option value="material">Type</option>
+    </select>
   </div>
+  <div class="chip-row" id="f-material" aria-label="Filament type filter"></div>
+  <div class="chip-row" id="f-color" aria-label="Color filter"></div>
 </header>
 
 <main id="list" class="list"></main>
 
-<button id="btn-add" class="fab" aria-label="Add spool">+</button>
+<nav class="bottom-bar">
+  <button id="btn-log" class="btn primary grow">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    Log a print
+  </button>
+  <button id="btn-add" class="btn">+ Spool</button>
+</nav>
 
 <div id="overlay" class="overlay" hidden>
   <div class="backdrop"></div>
