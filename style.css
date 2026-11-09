@@ -216,10 +216,6 @@ input[type=search], .field input, .field select, .field textarea, .search-row se
 .slot-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slot-g { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .slot .bar { width: 100%; margin-top: 2px; height: 6px; }
-.slot.ext { grid-column: 1 / -1; flex-direction: row; min-height: 64px; text-align: left; gap: 12px; padding: 10px 12px; }
-.slot.ext .slot-label { align-self: center; width: 64px; flex: none; }
-.slot.ext .bar { width: 72px; flex: none; }
-.slot.ext.empty { justify-content: flex-start; }
 .swatch.md { width: 40px; height: 40px; flex: none; }
 .badge {
   display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;

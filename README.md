@@ -38,7 +38,7 @@ Tap **Log a print**, then take a photo of the slicer's estimate or pick a screen
 Screenshots read much more reliably than photos of a monitor.
 
 ## AMS loadout
-The AMS card at the top shows what's loaded in each slot (A1–A4, plus B–D for extra units and an optional external holder, set in Settings). Tap an empty slot to load a spool from storage. Tap a loaded slot to swap it, unload it, or see its details. You can also load a spool from its own detail page. When you log a print, Filament 1, 2, 3… default to the spools loaded in the AMS, in slot order.
+The AMS card at the top shows what's loaded in each slot (A1–A4, plus B–D if you set more AMS units in Settings). Tap an empty slot to load a spool from storage. Tap a loaded slot to swap it, unload it, or see its details. You can also load a spool from its own detail page. When you log a print, Filament 1, 2, 3… default to the spools loaded in the AMS, in slot order.
 
 ## Backup
 Use Settings (⚙︎) → **Export JSON backup** to save the file to Files or AirDrop it. Restore it with **Import JSON backup**. Deleting the home-screen icon, or iOS clearing site data, erases the inventory, so export now and then.

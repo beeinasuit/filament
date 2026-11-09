@@ -146,7 +146,7 @@
   }
 
   // ---------- State ----------
-  const state = { spools: [], prints: [], threshold: 150, q: '', material: '', color: '', lowOnly: false, amsOnly: false, sort: 'added', ams: { units: 1, ext: false } };
+  const state = { spools: [], prints: [], threshold: 150, q: '', material: '', color: '', lowOnly: false, amsOnly: false, sort: 'added', ams: { units: 1 } };
 
   // ---------- Helpers ----------
   const $ = (s, el = document) => el.querySelector(s);
@@ -301,15 +301,14 @@
   }
 
   // ---------- AMS loadout ----------
-  // Slots are A1–A4 per AMS unit (B, C, D for extra units), plus an optional external spool holder.
+  // Slots are A1–A4 per AMS unit (B, C, D for extra units).
   const UNIT_LETTERS = ['A', 'B', 'C', 'D'];
   function amsSlots() {
     const out = [];
     for (let u = 0; u < state.ams.units; u++) for (let n = 1; n <= 4; n++) out.push(UNIT_LETTERS[u] + n);
-    if (state.ams.ext) out.push('EXT');
     return out;
   }
-  const slotName = (slot) => (slot === 'EXT' ? 'External' : slot);
+  const slotName = (slot) => slot;
   const inSlot = (slot) => state.spools.find(s => s.amsSlot === slot);
   const isLoaded = (s) => !!s.amsSlot && amsSlots().includes(s.amsSlot);
   const loadedSpools = () => amsSlots().map(inSlot).filter(Boolean);
@@ -335,10 +334,9 @@
       <div class="ams-head"><h2>AMS loadout</h2><span class="hint">${loaded} of ${slots.length} loaded</span></div>
       <div class="ams-grid">${slots.map(slot => {
         const s = inSlot(slot);
-        const ext = slot === 'EXT' ? ' ext' : '';
-        if (!s) return `<button class="slot empty${ext}" data-slot="${slot}" aria-label="${slotName(slot)} empty, tap to load">
+        if (!s) return `<button class="slot empty" data-slot="${slot}" aria-label="${slotName(slot)} empty, tap to load">
             <span class="slot-label">${slotName(slot)}</span><span class="slot-plus">+</span><span class="slot-meta">Empty</span></button>`;
-        return `<button class="slot${ext}" data-slot="${slot}" aria-label="${slotName(slot)}: ${esc(s.color)}">
+        return `<button class="slot" data-slot="${slot}" aria-label="${slotName(slot)}: ${esc(s.color)}">
             <span class="slot-label">${slotName(slot)}</span>
             <span class="swatch md" style="background:${swatchBg(s)}"></span>
             <span class="slot-text"><span class="slot-color">${esc(s.color || 'No color')}</span>
@@ -422,7 +420,7 @@
       <div class="ams-grid">${slots.map(slot => {
         const o = inSlot(slot);
         const me = o && o.id === s.id;
-        return `<button class="slot${o ? '' : ' empty'}${me ? ' current' : ''}${slot === 'EXT' ? ' ext' : ''}" data-load="${slot}">
+        return `<button class="slot${o ? '' : ' empty'}${me ? ' current' : ''}" data-load="${slot}">
           <span class="slot-label">${slotName(slot)}</span>
           ${o ? `<span class="swatch md" style="background:${swatchBg(o)}"></span><span class="slot-text"><span class="slot-color">${me ? 'This spool' : esc(o.color || '')}</span></span>` : '<span class="slot-plus">+</span><span class="slot-meta">Empty</span>'}
         </button>`;
@@ -936,7 +934,6 @@
       <div class="stack">
         <div class="field"><label for="i-units">AMS units</label>
           <select id="i-units">${[1, 2, 3, 4].map(n => `<option value="${n}" ${n === state.ams.units ? 'selected' : ''}>${n} unit${n > 1 ? 's' : ''} (${n * 4} slots)</option>`).join('')}</select></div>
-        <label class="toggle"><input type="checkbox" id="i-ext" ${state.ams.ext ? 'checked' : ''}> <span>External spool holder</span></label>
       </div>
       <div class="section-label" style="margin-top:24px">Backup</div>
       <div class="stack">
@@ -955,7 +952,7 @@
         await meta.set('threshold', state.threshold); render(); toast(`Low stock ≤ ${state.threshold} g`);
       });
       const saveAms = async () => {
-        state.ams = { units: Math.min(4, Math.max(1, +el.querySelector('#i-units').value || 1)), ext: el.querySelector('#i-ext').checked };
+        state.ams = { units: Math.min(4, Math.max(1, +el.querySelector('#i-units').value || 1)) };
         await meta.set('ams', state.ams);
         // Spools in slots that no longer exist go back to storage
         const gone = state.spools.filter(s => s.amsSlot && !amsSlots().includes(s.amsSlot));
@@ -964,7 +961,6 @@
         render(); toast(gone.length ? `AMS updated · ${gone.length} spool${gone.length > 1 ? 's' : ''} back to storage` : 'AMS updated');
       };
       el.querySelector('#i-units').onchange = saveAms;
-      el.querySelector('#i-ext').onchange = saveAms;
       el.querySelector('[data-act=export]').onclick = exportJSON;
       const file = el.querySelector('#import-file');
       el.querySelector('[data-act=import]').onclick = () => file.click();
@@ -1016,7 +1012,7 @@
       await spoolsDB.putMany(clean);
       if (Array.isArray(data.prints)) await printsDB.putMany(data.prints.filter(p => p && p.id && Array.isArray(p.items)));
       if (data.threshold != null) { state.threshold = num(data.threshold, 150); await meta.set('threshold', state.threshold); }
-      if (data.ams && data.ams.units) { state.ams = { units: Math.min(4, Math.max(1, +data.ams.units)), ext: !!data.ams.ext }; await meta.set('ams', state.ams); }
+      if (data.ams && data.ams.units) { state.ams = { units: Math.min(4, Math.max(1, +data.ams.units)) }; await meta.set('ams', state.ams); }
       state.spools = await spoolsDB.all();
       state.prints = await printsDB.all();
       render(); closeSheet(); toast(`Imported ${clean.length} spools`);
@@ -1080,7 +1076,7 @@
     const thr = await meta.get('threshold');
     if (thr != null) state.threshold = thr;
     const ams = await meta.get('ams');
-    if (ams && ams.units) state.ams = { units: ams.units, ext: !!ams.ext };
+    if (ams && ams.units) state.ams = { units: ams.units };
     const sort = await meta.get('sort');
     if (sort) { state.sort = sort; $('#sort').value = sort; }
     state.spools = await spoolsDB.all();
