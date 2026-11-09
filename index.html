@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Filament</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Filament">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="title-row">
+    <h1>Filament</h1>
+    <button id="btn-settings" class="icon-btn" aria-label="Settings">⚙︎</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <input id="search" type="search" placeholder="Search brand, color, material, notes…" autocomplete="off">
+  <div class="filters">
+    <select id="f-material" aria-label="Material filter"></select>
+    <select id="f-brand" aria-label="Brand filter"></select>
+    <button id="f-low" class="chip" aria-pressed="false">Low stock</button>
+  </div>
+</header>
+
+<main id="list" class="list"></main>
+
+<button id="btn-add" class="fab" aria-label="Add spool">+</button>
+
+<div id="overlay" class="overlay" hidden>
+  <div class="backdrop"></div>
+  <section id="sheet" class="sheet" role="dialog" aria-modal="true"></section>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
