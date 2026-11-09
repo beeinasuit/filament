@@ -1,5 +1,5 @@
 // Bump VERSION whenever you change any app file so phones pick up the update.
-const VERSION = 'filament-v2';
+const VERSION = 'filament-v3';
 const ASSETS = [
   './',
   './index.html',
