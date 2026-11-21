@@ -146,7 +146,7 @@
   }
 
   // ---------- State ----------
-  const state = { spools: [], prints: [], threshold: 150, q: '', material: '', color: '', lowOnly: false, amsOnly: false, sort: 'added', ams: { units: 1 } };
+  const state = { spools: [], prints: [], threshold: 150, q: '', material: '', color: '', lowOnly: false, amsOnly: false, sort: 'added', ams: { units: 1 }, wishlist: [] };
 
   // ---------- Helpers ----------
   const $ = (s, el = document) => el.querySelector(s);
@@ -228,6 +228,7 @@
 
   function render() {
     renderAMS();
+    renderWishCard();
     renderFilters();
     const list = filtered();
     renderStats(list);
@@ -509,7 +510,7 @@
   }
 
   // ---------- Add / Edit form ----------
-  function showForm(existing) {
+  function showForm(existing, opts = {}) {
     const isEdit = !!(existing && existing.id);
     const s = existing || { brand: '', line: '', material: 'PLA', color: '', hex: '#888888', colorFamily: 'auto', sizeG: 1000, price: '', remainingG: '', location: '', purchaseDate: today(), notes: '', drying: '', nozzleTemp: '', bedTemp: '' };
     const brands = [...new Set(state.spools.map(x => x.brand).filter(Boolean))];
@@ -549,7 +550,7 @@
         <datalist id="dl-locs">${locs.map(b => `<option value="${esc(b)}">`).join('')}</datalist>
       </form>
     `, (el) => {
-      el.querySelector('[data-act=cancel]').onclick = () => (isEdit ? showDetail(s.id) : closeSheet());
+      el.querySelector('[data-act=cancel]').onclick = () => (isEdit ? showDetail(s.id) : opts.onCancel ? opts.onCancel() : closeSheet());
       el.querySelector('#spool-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = Object.fromEntries(new FormData(e.target).entries());
@@ -573,6 +574,7 @@
           await spoolsDB.putMany(created);
           state.spools.push(...created);
           closeSheet(); render(); toast(qty > 1 ? `Added ${qty} spools` : 'Spool added');
+          if (opts.onCreated) await opts.onCreated(created);
         }
       });
     });
@@ -891,6 +893,111 @@
     return s ? s.id : '';
   }
 
+  // ---------- Wish list ----------
+  // Colors needed for a project but not owned yet. Stored as one array in the meta store.
+  const saveWishlist = () => meta.set('wishlist', state.wishlist);
+
+  function similarOwned(w) {
+    const fam = family({ color: w.color, hex: w.hex, colorFamily: 'auto' });
+    return state.spools.filter(s => family(s) === fam && (!w.material || w.material === 'Any' || s.material === w.material));
+  }
+
+  function renderWishCard() {
+    const n = state.wishlist.length;
+    const dots = state.wishlist.slice(0, 8).map(w => `<i class="dot" style="background:${validHex(w.hex)}"></i>`).join('');
+    $('#wish-card').innerHTML = `
+      <span class="wish-title">Wish list</span>
+      <span class="wish-dots">${n ? dots : '<span class="hint">Colors you need but don’t have</span>'}</span>
+      <span class="wish-count">${n ? n : '+'}</span>`;
+  }
+
+  function showWishlist() {
+    const list = [...state.wishlist].sort((a, b) => b.createdAt - a.createdAt);
+    openSheet(`
+      <div class="sheet-head"><h2>Wish list</h2><button class="btn" data-act="close">Done</button></div>
+      <button class="btn primary block" data-act="add-wish">+ Add a color I need</button>
+      <div class="wish-list">
+        ${list.length ? list.map(w => {
+          const sim = similarOwned(w);
+          return `<div class="wcard" data-wid="${esc(w.id)}">
+            <div class="wtop">
+              <span class="swatch sm" style="background:${validHex(w.hex)}"></span>
+              <div class="wtext"><b>${esc(w.color || 'Unnamed color')}</b> <span class="mat">${esc([w.material, w.brand].filter(x => x && x !== 'Any').join(' · '))}</span>
+                ${w.project ? `<div class="hint">For: ${esc(w.project)}</div>` : ''}
+                ${w.notes ? `<div class="hint">${esc(w.notes)}</div>` : ''}
+                ${sim.length ? `<div class="wsim">You have ${sim.length} similar: ${esc(sim.slice(0, 2).map(s => `${s.color} ${s.material}`).join(', '))}${sim.length > 2 ? '…' : ''}</div>` : ''}
+              </div>
+            </div>
+            <div class="wbtns">
+              <button class="btn small primary" data-got="${esc(w.id)}">Got it → add spool</button>
+              <button class="btn small" data-wedit="${esc(w.id)}">Edit</button>
+              <button class="btn small" data-wdel="${esc(w.id)}" aria-label="Remove from wish list">Remove</button>
+            </div>
+          </div>`;
+        }).join('') : '<div class="empty">Nothing on the list. Add a color when a project needs one you don’t have.</div>'}
+      </div>
+    `, (el) => {
+      el.querySelector('[data-act=add-wish]').onclick = () => showWishForm(null);
+      el.querySelector('.wish-list').addEventListener('click', async e => {
+        const t = e.target.closest('button'); if (!t) return;
+        const id = t.dataset.got || t.dataset.wedit || t.dataset.wdel;
+        const w = state.wishlist.find(x => x.id === id); if (!w) return;
+        if (t.dataset.wedit) return showWishForm(w);
+        if (t.dataset.wdel) {
+          if (!confirm(`Remove ${w.color || 'this color'} from the wish list?`)) return;
+          state.wishlist = state.wishlist.filter(x => x.id !== id); await saveWishlist(); render(); showWishlist(); return;
+        }
+        // Got it: open Add spool prefilled; remove from the list once the spool is saved
+        showForm({
+          brand: w.brand || '', line: '', material: w.material && w.material !== 'Any' ? w.material : 'PLA', color: w.color || '', hex: validHex(w.hex),
+          colorFamily: 'auto', sizeG: 1000, price: '', remainingG: '', location: '', purchaseDate: today(),
+          notes: w.project ? `For ${w.project}` : '', drying: '', nozzleTemp: '', bedTemp: '',
+        }, {
+          onCancel: showWishlist,
+          onCreated: async () => {
+            state.wishlist = state.wishlist.filter(x => x.id !== id); await saveWishlist(); render();
+            toast(`${w.color || 'Color'} added to inventory and removed from wish list`);
+          },
+        });
+      });
+    });
+  }
+
+  function showWishForm(existing) {
+    const w = existing || { color: '', hex: '#888888', material: 'Any', brand: '', project: '', notes: '' };
+    const mats = ['Any', ...new Set([...MATERIALS, ...state.spools.map(x => x.material).filter(Boolean)])];
+    const brands = [...new Set(state.spools.map(x => x.brand).filter(Boolean))];
+    const f = (id, label, input, full) => `<div class="field ${full ? 'full' : ''}"><label for="${id}">${label}</label>${input}</div>`;
+    openSheet(`
+      <form id="wish-form">
+        <div class="sheet-head">
+          <button type="button" class="btn" data-act="back">Back</button>
+          <h2>${existing ? 'Edit wish' : 'Add a color'}</h2>
+          <button class="btn primary">Save</button>
+        </div>
+        <div class="form">
+          ${f('w-color', 'Color name', `<input id="w-color" name="color" value="${esc(w.color)}" placeholder="e.g. Silk Gold" autocapitalize="words" required>`)}
+          ${f('w-hex', 'Swatch', `<input id="w-hex" name="hex" type="color" value="${validHex(w.hex)}">`)}
+          ${f('w-material', 'Type', `<select id="w-material" name="material">${mats.map(m => `<option ${m === (w.material || 'Any') ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>`)}
+          ${f('w-brand', 'Brand (optional)', `<input id="w-brand" name="brand" value="${esc(w.brand)}" list="dl-wbrands" autocapitalize="words">`)}
+          ${f('w-project', 'Needed for (project)', `<input id="w-project" name="project" value="${esc(w.project)}" placeholder="e.g. Halloween pumpkins" autocapitalize="sentences">`, true)}
+          ${f('w-notes', 'Notes', `<textarea id="w-notes" name="notes" placeholder="Links, price seen, how much you need…">${esc(w.notes)}</textarea>`, true)}
+        </div>
+        <datalist id="dl-wbrands">${brands.map(b => `<option value="${esc(b)}">`).join('')}</datalist>
+      </form>
+    `, (el) => {
+      el.querySelector('[data-act=back]').onclick = showWishlist;
+      el.querySelector('#wish-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = Object.fromEntries(new FormData(e.target).entries());
+        const data = { color: fd.color.trim(), hex: validHex(fd.hex), material: fd.material, brand: fd.brand.trim(), project: fd.project.trim(), notes: fd.notes.trim() };
+        if (existing) Object.assign(existing, data);
+        else state.wishlist.push({ id: uid(), createdAt: Date.now(), ...data });
+        await saveWishlist(); render(); showWishlist(); toast(existing ? 'Saved' : `${data.color} added to wish list`);
+      });
+    });
+  }
+
   // ---------- History ----------
   function showHistory() {
     const list = [...state.prints].sort((a, b) => b.at - a.at);
@@ -974,7 +1081,7 @@
   }
 
   async function exportJSON() {
-    const payload = { app: 'filament-inventory', version: 2, exportedAt: new Date().toISOString(), threshold: state.threshold, ams: state.ams, spools: state.spools, prints: state.prints };
+    const payload = { app: 'filament-inventory', version: 2, exportedAt: new Date().toISOString(), threshold: state.threshold, ams: state.ams, wishlist: state.wishlist, spools: state.spools, prints: state.prints };
     const json = JSON.stringify(payload, null, 2);
     const name = `filament-backup-${today()}.json`;
     const blob = new Blob([json], { type: 'application/json' });
@@ -1011,6 +1118,11 @@
       if (replace) { await spoolsDB.clear(); if (Array.isArray(data.prints)) await printsDB.clear(); }
       await spoolsDB.putMany(clean);
       if (Array.isArray(data.prints)) await printsDB.putMany(data.prints.filter(p => p && p.id && Array.isArray(p.items)));
+      if (Array.isArray(data.wishlist)) {
+        const incoming = data.wishlist.filter(w => w && w.id);
+        state.wishlist = replace ? incoming : [...state.wishlist.filter(w => !incoming.some(i => i.id === w.id)), ...incoming];
+        await saveWishlist();
+      }
       if (data.threshold != null) { state.threshold = num(data.threshold, 150); await meta.set('threshold', state.threshold); }
       if (data.ams && data.ams.units) { state.ams = { units: Math.min(4, Math.max(1, +data.ams.units)) }; await meta.set('ams', state.ams); }
       state.spools = await spoolsDB.all();
@@ -1027,6 +1139,7 @@
     $('#btn-add').onclick = () => showForm(null);
     $('#btn-log').onclick = showLogPrint;
     $('#btn-history').onclick = showHistory;
+    $('#wish-card').onclick = showWishlist;
     $('#btn-settings').onclick = showSettings;
     $('#search').addEventListener('input', e => { state.q = e.target.value; render(); });
     $('#sort').onchange = e => { state.sort = e.target.value; meta.set('sort', state.sort); render(); };
@@ -1081,6 +1194,7 @@
     if (sort) { state.sort = sort; $('#sort').value = sort; }
     state.spools = await spoolsDB.all();
     state.prints = await printsDB.all();
+    state.wishlist = (await meta.get('wishlist')) || [];
     bind(); render();
     registerSW();
     window.__filament = { parseUsage, readSlicerPhoto, state }; // handy for debugging
